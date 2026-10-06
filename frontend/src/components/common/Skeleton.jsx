@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-export function Skeleton({ className = '' }) {
+export function Skeleton({ className = "" }) {
   return (
     <div
       className={`animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg ${className}`}
@@ -27,4 +27,3 @@ export function JournalCardSkeleton() {
 }
 
 export default Skeleton;
-

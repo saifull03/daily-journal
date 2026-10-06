@@ -1,18 +1,18 @@
-import React from 'react';
-import Modal from './Modal';
-import Button from './Button';
-import { AlertTriangle } from 'lucide-react';
+import React from "react";
+import Modal from "./Modal";
+import Button from "./Button";
+import { AlertTriangle } from "lucide-react";
 
 export default function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Delete this journal?',
-  description = 'This action cannot be undone.',
-  confirmText = 'Delete Journal',
-  cancelText = 'Cancel',
+  title = "Delete this journal?",
+  description = "This action cannot be undone.",
+  confirmText = "Delete Journal",
+  cancelText = "Cancel",
   isLoading = false,
-  variant = 'danger',
+  variant = "danger",
 }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-sm">
@@ -52,4 +52,3 @@ export default function ConfirmModal({
     </Modal>
   );
 }
-
