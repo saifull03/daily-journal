@@ -17,8 +17,6 @@ import {
   Calendar,
   Image as ImageIcon,
   HardDrive,
-  UserCheck,
-  UserX,
   Eye,
   RefreshCw,
   Lock,
@@ -26,6 +24,12 @@ import {
   User as UserIcon,
   X,
   ExternalLink,
+  Feather,
+  Sun,
+  Moon,
+  Compass,
+  Mountain,
+  Globe,
 } from 'lucide-react';
 import { adminApi } from '../../api/adminApi';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -35,6 +39,52 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import ConfirmModal from '../../components/common/ConfirmModal';
+
+// Curated high-res SVG presets for instant logo selection
+const PRESET_LOGOS = [
+  {
+    id: 'lotus',
+    name: 'Mindful Lotus',
+    icon: Sparkles,
+    color: '#d97706',
+    svgUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="48" fill="%23fef3c7"/><path d="M50 20C40 38 30 50 25 65C38 68 45 60 50 80C55 60 62 68 75 65C70 50 60 38 50 20Z" fill="%23d97706"/><circle cx="50" cy="45" r="8" fill="%23b45309"/></svg>`,
+  },
+  {
+    id: 'quill',
+    name: 'Elegant Quill',
+    icon: Feather,
+    color: '#6366f1',
+    svgUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="48" fill="%23e0e7ff"/><path d="M68 22C60 22 36 45 32 68C38 66 48 58 54 50C60 42 66 32 68 22Z" fill="%234f46e5"/><path d="M32 68L26 78L36 74L32 68Z" fill="%234338ca"/></svg>`,
+  },
+  {
+    id: 'sunburst',
+    name: 'Golden Dawn',
+    icon: Sun,
+    color: '#f59e0b',
+    svgUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="48" fill="%23fef3c7"/><circle cx="50" cy="50" r="22" fill="%23f59e0b"/><path d="M50 14V22M50 78V86M14 50H22M78 50H86M25 25L31 31M69 69L75 75M25 75L31 69M69 31L75 25" stroke="%23d97706" stroke-width="6" stroke-linecap="round"/></svg>`,
+  },
+  {
+    id: 'sanctuary',
+    name: 'Zen Mountain',
+    icon: Mountain,
+    color: '#10b981',
+    svgUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="48" fill="%23d1fae5"/><path d="M22 72L42 38L54 55L64 42L78 72H22Z" fill="%23059669"/><circle cx="70" cy="30" r="8" fill="%23047857"/></svg>`,
+  },
+  {
+    id: 'compass',
+    name: 'Explorer Compass',
+    icon: Compass,
+    color: '#06b6d4',
+    svgUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="48" fill="%23cffafe"/><circle cx="50" cy="50" r="34" stroke="%230891b2" stroke-width="4"/><polygon points="50,24 58,48 50,44 42,48" fill="%230284c7"/><polygon points="50,76 58,52 50,56 42,52" fill="%230369a1"/></svg>`,
+  },
+  {
+    id: 'nocturne',
+    name: 'Cosmic Moon',
+    icon: Moon,
+    color: '#a855f7',
+    svgUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="48" fill="%23f3e8ff"/><path d="M52 24C37 24 25 36 25 51C25 66 37 78 52 78C44 72 39 62 39 51C39 40 44 30 52 24Z" fill="%239333ea"/><circle cx="68" cy="38" r="3" fill="%237e22ce"/><circle cx="62" cy="62" r="2" fill="%237e22ce"/></svg>`,
+  },
+];
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'branding' | 'users' | 'journals'
@@ -85,7 +135,7 @@ export default function AdminDashboardPage() {
   };
 
   // ----------------------------------------------------
-  // 2. BRAND & SETTINGS STATE & MUTATIONS
+  // 2. BRAND & LOGO STATE & MUTATIONS
   // ----------------------------------------------------
   const [brandForm, setBrandForm] = useState({
     app_name: appName,
@@ -95,6 +145,13 @@ export default function AdminDashboardPage() {
     footer_text: footerText,
     allow_registration: allowRegistration,
   });
+
+  const [logoSourceType, setLogoSourceType] = useState('upload'); // 'upload' | 'preset' | 'url'
+  const [customLogoUrl, setCustomLogoUrl] = useState('');
+  const [logoPreview, setLogoPreview] = useState(appLogo);
+  const [selectedLogoFile, setSelectedLogoFile] = useState(null);
+  const fileInputRef = useRef(null);
+  const overviewFileInputRef = useRef(null);
 
   // Sync when store values change
   React.useEffect(() => {
@@ -106,17 +163,14 @@ export default function AdminDashboardPage() {
       footer_text: footerText,
       allow_registration: allowRegistration,
     });
-  }, [appName, appTagline, primaryColor, welcomeMessage, footerText, allowRegistration]);
-
-  const [logoPreview, setLogoPreview] = useState(appLogo);
-  const [selectedLogoFile, setSelectedLogoFile] = useState(null);
-  const fileInputRef = useRef(null);
+    setLogoPreview(appLogo);
+  }, [appName, appTagline, appLogo, primaryColor, welcomeMessage, footerText, allowRegistration]);
 
   const updateSettingsMutation = useMutation({
     mutationFn: (data) => adminApi.updateSettings(data),
     onSuccess: (res) => {
       updateSettingsLocally(res.data);
-      addToast('Brand and system settings saved successfully! ✨', 'success');
+      addToast('Brand settings updated successfully! ✨', 'success');
       queryClient.invalidateQueries(['admin-settings']);
     },
     onError: (err) => {
@@ -130,7 +184,7 @@ export default function AdminDashboardPage() {
       updateSettingsLocally({ app_logo: res.data.app_logo });
       setLogoPreview(res.data.app_logo);
       setSelectedLogoFile(null);
-      addToast('Custom brand logo updated! 🎨', 'success');
+      addToast('Brand logo uploaded & applied live! 🎨', 'success');
       queryClient.invalidateQueries(['admin-settings']);
     },
     onError: (err) => {
@@ -144,7 +198,8 @@ export default function AdminDashboardPage() {
       updateSettingsLocally({ app_logo: null });
       setLogoPreview(null);
       setSelectedLogoFile(null);
-      addToast('Brand logo reset to default icon.', 'info');
+      setCustomLogoUrl('');
+      addToast('Brand logo reset to default emblem.', 'info');
       queryClient.invalidateQueries(['admin-settings']);
     },
     onError: (err) => {
@@ -152,6 +207,7 @@ export default function AdminDashboardPage() {
     },
   });
 
+  // Handle local file selection
   const handleLogoFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -165,18 +221,41 @@ export default function AdminDashboardPage() {
         setLogoPreview(event.target.result);
       };
       reader.readAsDataURL(file);
+
+      // Instantly upload file to server
+      const formData = new FormData();
+      formData.append('logo', file);
+      uploadLogoMutation.mutate(formData);
     }
   };
 
+  // Handle Preset logo selection
+  const handleSelectPresetLogo = (preset) => {
+    setLogoPreview(preset.svgUrl);
+    setSelectedLogoFile(null);
+    updateSettingsMutation.mutate({
+      ...brandForm,
+      app_logo: preset.svgUrl,
+    });
+    addToast(`"${preset.name}" preset logo applied! 🌟`, 'success');
+  };
+
+  // Handle Custom URL apply
+  const handleApplyLogoUrl = () => {
+    if (!customLogoUrl.trim()) return;
+    setLogoPreview(customLogoUrl.trim());
+    setSelectedLogoFile(null);
+    updateSettingsMutation.mutate({
+      ...brandForm,
+      app_logo: customLogoUrl.trim(),
+    });
+    addToast('Custom logo URL applied! 🌐', 'success');
+  };
+
+  // Save all general brand settings
   const handleSaveBrandSettings = (e) => {
     e.preventDefault();
     updateSettingsMutation.mutate(brandForm);
-
-    if (selectedLogoFile) {
-      const formData = new FormData();
-      formData.append('logo', selectedLogoFile);
-      uploadLogoMutation.mutate(formData);
-    }
   };
 
   // ----------------------------------------------------
@@ -325,11 +404,11 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white tracking-tight">
-            System Administration & Branding
+            System Administration & Brand Studio
           </h1>
           <p className="text-xs sm:text-sm text-stone-300 max-w-2xl">
-            Full authority to customize brand identity, manage users, moderate journal content,
-            and monitor platform statistics.
+            Manage and customize brand logos, application identity, user permissions, and content
+            moderation across the entire platform.
           </p>
         </div>
 
@@ -353,8 +432,8 @@ export default function AdminDashboardPage() {
       {/* Admin Tab Navigation */}
       <div className="flex items-center gap-2 border-b border-stone-200 dark:border-stone-800 pb-1 overflow-x-auto">
         {[
-          { id: 'overview', label: 'Overview & Metrics', icon: BarChart3 },
-          { id: 'branding', label: 'Brand & Customization', icon: Palette },
+          { id: 'overview', label: 'Overview & Quick Brand Setup', icon: BarChart3 },
+          { id: 'branding', label: 'Brand & Logo Studio', icon: Palette },
           { id: 'users', label: 'User Management', icon: Users, badge: stats.counts.total_users },
           { id: 'journals', label: 'Journal Moderation', icon: BookOpen, badge: stats.counts.total_journals },
         ].map((tab) => {
@@ -390,10 +469,183 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: OVERVIEW & METRICS                                                 */}
+      {/* TAB 1: OVERVIEW & QUICK BRAND SETUP                                       */}
       {/* ========================================================================= */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* 🌟 FEATURED SYSTEM FORM: Change Brand Logo Directly from Dashboard */}
+          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 border-2 border-stone-200/80 dark:border-stone-800 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-stone-800">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[10px] font-extrabold uppercase tracking-wider">
+                    Quick Brand Control
+                  </span>
+                  <h2 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">
+                    Change Brand Logo & Identity
+                  </h2>
+                </div>
+                <p className="text-xs text-stone-600 dark:text-stone-400">
+                  Update the application logo instantly. Upload a custom image file, choose from
+                  curated brand presets, or paste a URL.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                leftIcon={Palette}
+                onClick={() => setActiveTab('branding')}
+              >
+                Open Full Studio
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              {/* Current Active Logo Display Card (Transparent / Clean Container - No Black Box) */}
+              <div className="lg:col-span-4 flex flex-col items-center justify-center p-6 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80 shadow-2xs text-center space-y-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                  Active Brand Logo
+                </p>
+
+                {/* Clean Logo Container without forced black background */}
+                <div className="w-24 h-24 rounded-2xl bg-transparent flex items-center justify-center p-2 overflow-hidden relative group">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Brand Logo"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center justify-center">
+                      <Sparkles className="w-8 h-8 text-amber-500" />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-bold text-stone-900 dark:text-stone-100">
+                    {appName || 'Daily Journal'}
+                  </h4>
+                  <p className="text-[11px] text-stone-500">
+                    {logoPreview ? 'Custom Brand Logo Active' : 'Default Emblem Active'}
+                  </p>
+                </div>
+
+                {logoPreview && (
+                  <button
+                    type="button"
+                    onClick={() => removeLogoMutation.mutate()}
+                    className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer flex items-center gap-1 pt-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Reset to Default</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Instant Logo Selection Options */}
+              <div className="lg:col-span-8 space-y-4">
+                {/* 1. Upload Local Logo File */}
+                <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                      <Upload className="w-4 h-4 text-amber-500" /> Option 1: Upload Image File (PNG, JPG, SVG, WebP)
+                    </span>
+                    <span className="text-[10px] text-stone-400">Max 4MB</span>
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={overviewFileInputRef}
+                    onChange={handleLogoFileChange}
+                    accept="image/png, image/jpeg, image/webp, image/svg+xml, image/gif"
+                    className="hidden"
+                  />
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      leftIcon={Upload}
+                      onClick={() => overviewFileInputRef.current?.click()}
+                      isLoading={uploadLogoMutation.isPending}
+                    >
+                      Select & Apply Image File
+                    </Button>
+                    <span className="text-xs text-stone-500">
+                      Instantly updates Sidebar, Header & Auth screens!
+                    </span>
+                  </div>
+                </div>
+
+                {/* 2. Choose from Curated Logo Presets */}
+                <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80 space-y-2.5">
+                  <span className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-purple-500" /> Option 2: 1-Click Curated Presets
+                  </span>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {PRESET_LOGOS.map((preset) => {
+                      const isSelected = logoPreview === preset.svgUrl;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handleSelectPresetLogo(preset)}
+                          className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-amber-500 bg-white dark:bg-stone-900 shadow-xs ring-2 ring-amber-400'
+                              : 'border-stone-200 dark:border-stone-700 bg-white/70 dark:bg-stone-900/70 hover:bg-white dark:hover:bg-stone-900'
+                          }`}
+                          title={preset.name}
+                        >
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 p-1">
+                            <img
+                              src={preset.svgUrl}
+                              alt={preset.name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="text-[10px] font-semibold text-stone-700 dark:text-stone-300 truncate w-full">
+                            {preset.name.split(' ')[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. Image URL */}
+                <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700/80 space-y-2">
+                  <span className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-sky-500" /> Option 3: Remote Logo Image URL
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={customLogoUrl}
+                      onChange={(e) => setCustomLogoUrl(e.target.value)}
+                      placeholder="https://example.com/brand-logo.png"
+                      className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs text-stone-900 dark:text-stone-100 focus:outline-hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleApplyLogoUrl}
+                      disabled={!customLogoUrl.trim()}
+                    >
+                      Apply URL
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Key Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-2">
@@ -449,7 +701,7 @@ export default function AdminDashboardPage() {
 
             <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-2">
               <div className="flex items-center justify-between text-stone-500 dark:text-stone-400">
-                <span className="text-xs font-semibold">Brand Status</span>
+                <span className="text-xs font-semibold">Current Brand</span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Sparkles className="w-4 h-4" />
                 </div>
@@ -459,13 +711,13 @@ export default function AdminDashboardPage() {
                   {appName}
                 </p>
                 <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                  Active
+                  Live
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Template Breakdown & Quick Overview */}
+          {/* Template Breakdown & Activity Overview */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Journal Template Distribution */}
             <div className="lg:col-span-2 bg-white dark:bg-stone-900 rounded-3xl p-6 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
@@ -510,7 +762,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Quick Actions & System Info */}
+            {/* Quick Actions */}
             <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4">
               <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
                 Administration Shortcuts
@@ -527,9 +779,9 @@ export default function AdminDashboardPage() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-stone-900 dark:text-stone-100">
-                        Customize Brand Logo & Colors
+                        Brand & Logo Studio
                       </p>
-                      <p className="text-[11px] text-stone-500">Update logo, title, and theme</p>
+                      <p className="text-[11px] text-stone-500">Edit titles, colors, and slogans</p>
                     </div>
                   </div>
                   <ExternalLink className="w-4 h-4 text-stone-400" />
@@ -680,50 +932,90 @@ export default function AdminDashboardPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: BRAND & CUSTOMIZATION                                              */}
+      {/* TAB 2: BRAND & LOGO STUDIO                                                */}
       {/* ========================================================================= */}
       {activeTab === 'branding' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Brand Customization Form */}
           <div className="lg:col-span-2 bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-6">
             <div>
-              <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                Brand & Theme Customizer
+              <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                <Palette className="w-5 h-5 text-amber-500" /> Complete Brand & Logo Studio
               </h2>
               <p className="text-xs text-stone-500">
-                Customize the application brand logo, title, slogan, accent palette, and system
-                messages. Changes will immediately reflect across the frontend for all users.
+                Customize every facet of your brand identity. Upload logos, configure slogans, choose
+                color themes, and adjust system permissions.
               </p>
             </div>
 
-            <form onSubmit={handleSaveBrandSettings} className="space-y-6">
-              {/* 1. Custom Brand Logo Upload Section */}
-              <div className="space-y-3 p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/80 dark:border-stone-700/80">
-                <label className="block text-xs font-bold text-stone-900 dark:text-stone-100">
-                  Brand Logo Image
-                </label>
-                <p className="text-[11px] text-stone-500">
-                  Upload your organization, product, or personal logo (PNG, JPG, SVG, WebP, max 4MB).
-                  Appears in Sidebar, Header, and Login screens.
-                </p>
+            {/* 1. BRAND LOGO MANAGER FORM */}
+            <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wide">
+                    Brand Logo Customizer
+                  </h3>
+                  <p className="text-[11px] text-stone-500">
+                    Choose how you want to set your brand logo image (Transparent, No background box)
+                  </p>
+                </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
-                  {/* Logo Preview box */}
-                  <div className="w-20 h-20 rounded-2xl bg-white dark:bg-stone-950 border-2 border-dashed border-stone-300 dark:border-stone-700 flex items-center justify-center p-2 overflow-hidden shrink-0 shadow-2xs">
+                {logoPreview && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={Trash2}
+                    onClick={() => removeLogoMutation.mutate()}
+                    className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                  >
+                    Reset Logo
+                  </Button>
+                )}
+              </div>
+
+              {/* Logo Source Selector Tabs */}
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-stone-200/70 dark:bg-stone-800 max-w-sm">
+                {[
+                  { id: 'upload', label: 'File Upload', icon: Upload },
+                  { id: 'preset', label: 'Presets', icon: Sparkles },
+                  { id: 'url', label: 'Image URL', icon: Globe },
+                ].map((src) => {
+                  const Icon = src.icon;
+                  const isCur = logoSourceType === src.id;
+                  return (
+                    <button
+                      key={src.id}
+                      type="button"
+                      onClick={() => setLogoSourceType(src.id)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        isCur
+                          ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 shadow-2xs'
+                          : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{src.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Source 1: File Upload */}
+              {logoSourceType === 'upload' && (
+                <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+                  <div className="w-16 h-16 rounded-2xl bg-transparent flex items-center justify-center p-1 overflow-hidden shrink-0 border border-stone-200 dark:border-stone-700">
                     {logoPreview ? (
                       <img
                         src={logoPreview}
-                        alt="Brand Logo Preview"
+                        alt="Logo Preview"
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 flex items-center justify-center">
-                        <Sparkles className="w-6 h-6 text-amber-400 dark:text-amber-600" />
-                      </div>
+                      <Sparkles className="w-6 h-6 text-amber-500" />
                     )}
                   </div>
-
-                  <div className="space-y-2 flex-1 w-full">
+                  <div className="space-y-1.5 flex-1">
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -731,47 +1023,84 @@ export default function AdminDashboardPage() {
                       accept="image/png, image/jpeg, image/webp, image/svg+xml, image/gif"
                       className="hidden"
                     />
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={Upload}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        {logoPreview ? 'Change Logo Image' : 'Upload Logo'}
-                      </Button>
-
-                      {logoPreview && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          leftIcon={Trash2}
-                          onClick={() => {
-                            if (appLogo) {
-                              removeLogoMutation.mutate();
-                            } else {
-                              setLogoPreview(null);
-                              setSelectedLogoFile(null);
-                            }
-                          }}
-                          className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                        >
-                          Reset to Default
-                        </Button>
-                      )}
-                    </div>
-                    {selectedLogoFile && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                        New file selected: {selectedLogoFile.name} (Save changes below to apply)
-                      </p>
-                    )}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={Upload}
+                      onClick={() => fileInputRef.current?.click()}
+                      isLoading={uploadLogoMutation.isPending}
+                    >
+                      Browse & Upload Image File
+                    </Button>
+                    <p className="text-[10px] text-stone-400">
+                      Supports PNG, JPG, JPEG, SVG, WebP (Max 4MB) · Renders clean without any background
+                    </p>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* 2. Brand Names & Tagline */}
+              {/* Source 2: Curated Presets */}
+              {logoSourceType === 'preset' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                  {PRESET_LOGOS.map((preset) => {
+                    const isSelected = logoPreview === preset.svgUrl;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleSelectPresetLogo(preset)}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-amber-500 bg-white dark:bg-stone-900 shadow-xs ring-2 ring-amber-400'
+                            : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800'
+                        }`}
+                      >
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 p-1">
+                          <img
+                            src={preset.svgUrl}
+                            alt={preset.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
+                            {preset.name}
+                          </p>
+                          <span className="text-[10px] text-stone-400">Click to apply</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Source 3: Remote Image URL */}
+              {logoSourceType === 'url' && (
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="url"
+                    value={customLogoUrl}
+                    onChange={(e) => setCustomLogoUrl(e.target.value)}
+                    placeholder="https://example.com/brand-logo.png"
+                    className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs text-stone-900 dark:text-stone-100 focus:outline-hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleApplyLogoUrl}
+                    disabled={!customLogoUrl.trim()}
+                  >
+                    Set URL
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* General Brand Details Form */}
+            <form onSubmit={handleSaveBrandSettings} className="space-y-6">
+              {/* Brand Names & Tagline */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Application / Brand Name"
@@ -791,10 +1120,10 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              {/* 3. Preset Accent Color Swatches */}
+              {/* Accent Color Palettes */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-stone-900 dark:text-stone-100">
-                  Brand Theme Accent Palette
+                  Theme Accent Palette
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
                   {[
@@ -825,10 +1154,10 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* 4. Welcome Headline & Description */}
+              {/* Welcome Headline & Description */}
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-stone-900 dark:text-stone-100">
-                  Welcome Subtext (Auth & Landing)
+                  Welcome Subtext (Auth & Landing Screens)
                 </label>
                 <textarea
                   rows={2}
@@ -839,7 +1168,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              {/* 5. Footer Text */}
+              {/* Footer Text */}
               <Input
                 label="Footer Copyright & Notice"
                 type="text"
@@ -848,7 +1177,7 @@ export default function AdminDashboardPage() {
                 placeholder="© Daily Journal — Mindful writing sanctuary"
               />
 
-              {/* 6. System Registration Toggle */}
+              {/* System Registration Toggle */}
               <div className="flex items-center justify-between p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-800">
                 <div>
                   <p className="text-xs font-bold text-stone-900 dark:text-stone-100">
@@ -878,9 +1207,7 @@ export default function AdminDashboardPage() {
                   variant="primary"
                   size="md"
                   leftIcon={CheckCircle2}
-                  isLoading={
-                    updateSettingsMutation.isPending || uploadLogoMutation.isPending
-                  }
+                  isLoading={updateSettingsMutation.isPending}
                 >
                   Save Brand Settings
                 </Button>
@@ -888,7 +1215,7 @@ export default function AdminDashboardPage() {
             </form>
           </div>
 
-          {/* Live Brand Preview Card */}
+          {/* Live Multi-View Brand Sandbox */}
           <div className="space-y-4">
             <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 border border-stone-200 dark:border-stone-800 shadow-2xs space-y-4 sticky top-24">
               <div>
@@ -896,28 +1223,30 @@ export default function AdminDashboardPage() {
                   Live Brand Preview
                 </span>
                 <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 mt-2">
-                  Visitor & User Experience
+                  Real-Time UI Preview
                 </h3>
                 <p className="text-xs text-stone-500">
-                  How your customized brand appears live across header and navigation
+                  How your customized brand appears live across navigation and authentication
                 </p>
               </div>
 
-              {/* Simulated Sidebar Header */}
+              {/* Sidebar Header Preview (Transparent Logo Container) */}
               <div className="p-4 rounded-2xl bg-stone-100 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                  Sidebar Brand Header
+                  1. Sidebar Navigation Brand
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 flex items-center justify-center overflow-hidden shadow-xs shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-transparent flex items-center justify-center overflow-hidden shadow-xs shrink-0">
                     {logoPreview ? (
                       <img
                         src={logoPreview}
                         alt="Logo"
-                        className="w-full h-full object-contain p-1"
+                        className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Sparkles className="w-5 h-5 text-amber-400 dark:text-amber-600" />
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-amber-500" />
+                      </div>
                     )}
                   </div>
                   <div className="min-w-0">
@@ -931,21 +1260,34 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Simulated Welcome Notice */}
-              <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-800 space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                  Auth & Dashboard Banner
+              {/* Login Modal Preview (Transparent Logo Container) */}
+              <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-800 space-y-2 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 text-left">
+                  2. Login & Sign Up Screen
                 </p>
+                <div className="w-14 h-14 rounded-2xl bg-transparent mx-auto flex items-center justify-center overflow-hidden p-1">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Logo"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-amber-500" />
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs font-serif font-bold text-stone-900 dark:text-stone-100">
                   Welcome to {brandForm.app_name || 'Daily Journal'}
                 </p>
-                <p className="text-[11px] text-stone-500">
+                <p className="text-[10px] text-stone-500">
                   {brandForm.welcome_message ||
                     'Capture your thoughts, reflections, and journeys in a distraction-free sanctuary.'}
                 </p>
               </div>
 
-              {/* Registration Status Badge */}
+              {/* Registration Status */}
               <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-800 flex items-center justify-between text-xs">
                 <span className="text-stone-500">Public Signups:</span>
                 <span

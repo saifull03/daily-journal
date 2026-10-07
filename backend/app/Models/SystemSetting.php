@@ -57,6 +57,7 @@ class SystemSetting extends Model
             'app_name' => $records['app_name'] ?? 'Daily Journal',
             'app_tagline' => $records['app_tagline'] ?? 'Digital Diary & Mindful Sanctuary',
             'app_logo' => $logoUrl,
+            'app_logo_bg' => $records['app_logo_bg'] ?? 'transparent',
             'primary_color' => $records['primary_color'] ?? '#1c1917',
             'welcome_message' => $records['welcome_message'] ?? 'Capture your thoughts, reflections, and journeys in a distraction-free sanctuary.',
             'footer_text' => $records['footer_text'] ?? '© Daily Journal — Mindful writing sanctuary',

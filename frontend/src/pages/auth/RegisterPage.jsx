@@ -58,7 +58,13 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 mx-auto flex items-center justify-center shadow-md overflow-hidden p-1">
+          <div
+            className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center overflow-hidden p-1 ${
+              appLogo
+                ? 'bg-transparent'
+                : 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60 shadow-xs'
+            }`}
+          >
             {appLogo ? (
               <img
                 src={appLogo}
@@ -66,7 +72,7 @@ export default function RegisterPage() {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <Sparkles className="w-7 h-7 text-amber-400 dark:text-amber-600" />
+              <Sparkles className="w-8 h-8 text-amber-500" />
             )}
           </div>
           <h1 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-100">

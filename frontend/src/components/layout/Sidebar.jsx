@@ -49,15 +49,21 @@ export default function Sidebar({ onOpenTemplateSelector }) {
       <div className="space-y-6">
         {/* Dynamic App Logo & Title */}
         <div className="flex items-center gap-3 px-2 pt-2">
-          <div className="w-9 h-9 rounded-xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 flex items-center justify-center shadow-xs overflow-hidden shrink-0">
+          <div
+            className={`w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${
+              appLogo
+                ? 'bg-transparent'
+                : 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60 shadow-2xs'
+            }`}
+          >
             {appLogo ? (
               <img
                 src={appLogo}
                 alt={appName}
-                className="w-full h-full object-contain p-1"
+                className="w-full h-full object-contain"
               />
             ) : (
-              <Sparkles className="w-5 h-5 text-amber-400 dark:text-amber-600" />
+              <Sparkles className="w-5 h-5 text-amber-500" />
             )}
           </div>
           <div className="min-w-0">

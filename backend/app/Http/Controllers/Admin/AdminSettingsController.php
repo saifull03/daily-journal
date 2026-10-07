@@ -31,6 +31,8 @@ class AdminSettingsController extends Controller
         $validated = $request->validate([
             'app_name' => 'nullable|string|max:100',
             'app_tagline' => 'nullable|string|max:255',
+            'app_logo' => 'nullable|string|max:1000',
+            'app_logo_bg' => 'nullable|string|max:50',
             'primary_color' => 'nullable|string|max:30',
             'welcome_message' => 'nullable|string|max:500',
             'footer_text' => 'nullable|string|max:255',
