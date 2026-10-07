@@ -17,12 +17,50 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Create or update Demo User
+        // 0. Seed Default System & Brand Settings
+        $settings = [
+            'app_name' => 'Daily Journal',
+            'app_tagline' => 'Digital Diary & Mindful Sanctuary',
+            'app_logo' => null,
+            'primary_color' => '#1c1917',
+            'welcome_message' => 'Capture your thoughts, reflections, and journeys in a distraction-free sanctuary.',
+            'footer_text' => '© Daily Journal — Mindful writing sanctuary',
+            'allow_registration' => 'true',
+        ];
+
+        foreach ($settings as $key => $value) {
+            \App\Models\SystemSetting::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'group' => 'general']
+            );
+        }
+
+        // 1. Create or update Super Admin User
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'System Admin',
+                'password' => Hash::make('admin123'),
+                'role' => 'admin',
+                'is_admin' => true,
+                'avatar' => null,
+                'bio' => 'Super Administrator with full control over brand customization, system settings, and user moderation.',
+                'settings' => [
+                    'theme' => 'light',
+                    'auto_save' => true,
+                    'font_family' => 'sans',
+                ],
+            ]
+        );
+
+        // 2. Create or update Demo User
         $user = User::updateOrCreate(
             ['email' => 'demo@example.com'],
             [
                 'name' => 'Alex Morgan',
                 'password' => Hash::make('password123'),
+                'role' => 'user',
+                'is_admin' => false,
                 'avatar' => null,
                 'bio' => 'Writer, creator, and lifelong learner. Documenting daily reflections, ideas, and growth.',
                 'settings' => [

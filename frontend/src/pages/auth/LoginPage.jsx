@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../../api/authApi';
 import { useAuthStore } from '../../store/authStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { useToastStore } from '../../store/toastStore';
 
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
-import { Sparkles, Mail, Lock, LogIn } from 'lucide-react';
+import { Sparkles, Mail, Lock, LogIn, Shield, User } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('demo@example.com');
@@ -16,14 +17,16 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
+  const { appName, appLogo, welcomeMessage } = useSettingsStore();
   const { addToast } = useToastStore();
 
   const loginMutation = useMutation({
     mutationFn: (credentials) => authApi.login(credentials),
     onSuccess: (res) => {
       setAuth(res.data.user, res.data.token);
-      addToast('Welcome back! 👋', 'success');
-      navigate('/dashboard');
+      const isAdmin = res.data.user?.is_admin || res.data.user?.role === 'admin';
+      addToast(isAdmin ? 'Welcome Super Admin! 🛡️' : 'Welcome back! 👋', 'success');
+      navigate(isAdmin ? '/admin' : '/dashboard');
     },
     onError: (err) => {
       const msg =
@@ -44,6 +47,13 @@ export default function LoginPage() {
   const handleFillDemo = () => {
     setEmail('demo@example.com');
     setPassword('password123');
+    setErrorMessage('');
+  };
+
+  const handleFillAdmin = () => {
+    setEmail('admin@example.com');
+    setPassword('admin123');
+    setErrorMessage('');
   };
 
   return (
@@ -51,31 +61,63 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Brand header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 mx-auto flex items-center justify-center shadow-md">
-            <Sparkles className="w-6 h-6 text-amber-400 dark:text-amber-600" />
+          <div className="w-14 h-14 rounded-2xl bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 mx-auto flex items-center justify-center shadow-md overflow-hidden p-1">
+            {appLogo ? (
+              <img
+                src={appLogo}
+                alt={appName}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <Sparkles className="w-7 h-7 text-amber-400 dark:text-amber-600" />
+            )}
           </div>
           <h1 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-100">
-            Welcome Back
+            {appName ? `Welcome to ${appName}` : 'Welcome Back'}
           </h1>
-          <p className="text-xs text-stone-500 dark:text-stone-400">
-            Sign in to continue writing your personal story.
+          <p className="text-xs text-stone-500 dark:text-stone-400 max-w-xs mx-auto">
+            {welcomeMessage || 'Sign in to continue writing your personal story.'}
           </p>
         </div>
 
-        {/* Demo Credentials Quick-Fill Banner */}
-        <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-3.5 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
-          <div>
-            <span className="font-bold">Demo Account:</span>
-            <span className="text-stone-600 dark:text-stone-300 ml-1.5">
-              demo@example.com / password123
+        {/* Demo & Admin Credentials Quick-Fill Banners */}
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <button
+            type="button"
+            onClick={handleFillAdmin}
+            className="flex items-center justify-between p-2.5 rounded-2xl bg-purple-50/90 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60 text-purple-900 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors cursor-pointer text-left"
+          >
+            <div className="min-w-0">
+              <span className="font-bold flex items-center gap-1 text-[11px]">
+                <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                Admin
+              </span>
+              <p className="text-[10px] text-purple-700/80 dark:text-purple-300/80 truncate">
+                admin@example.com
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 underline shrink-0 ml-1">
+              Fill
             </span>
-          </div>
+          </button>
+
           <button
             type="button"
             onClick={handleFillDemo}
-            className="font-bold underline text-amber-700 dark:text-amber-400 hover:text-amber-900 cursor-pointer text-[11px]"
+            className="flex items-center justify-between p-2.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer text-left"
           >
-            Auto Fill
+            <div className="min-w-0">
+              <span className="font-bold flex items-center gap-1 text-[11px]">
+                <User className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                Journalist
+              </span>
+              <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80 truncate">
+                demo@example.com
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 underline shrink-0 ml-1">
+              Fill
+            </span>
           </button>
         </div>
 

@@ -2,11 +2,13 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './store/authStore';
+import { useSettingsStore } from './store/settingsStore';
 import { useTheme } from './hooks/useTheme';
 
 // Layout & Route Protection
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './routes/ProtectedRoute';
+import AdminRoute from './routes/AdminRoute';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -26,6 +28,9 @@ import TagsPage from './pages/tags/TagsPage';
 import StatisticsPage from './pages/statistics/StatisticsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 
+// Admin Page
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+
 // Create a single TanStack Query client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,11 +44,13 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const { initialize } = useAuthStore();
+  const { fetchSettings } = useSettingsStore();
   useTheme(); // Initialize theme on root load
 
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    fetchSettings();
+  }, [initialize, fetchSettings]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -74,6 +81,14 @@ export default function App() {
               <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/profile" element={<Navigate to="/settings" replace />} />
+
+              {/* Admin Protected Routes */}
+              <Route element={<AdminRoute />}>
+                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route path="/admin/branding" element={<AdminDashboardPage />} />
+                <Route path="/admin/users" element={<AdminDashboardPage />} />
+                <Route path="/admin/journals" element={<AdminDashboardPage />} />
+              </Route>
             </Route>
           </Route>
 

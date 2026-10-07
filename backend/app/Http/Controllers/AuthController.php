@@ -21,10 +21,20 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
+        $allowRegistration = filter_var(\App\Models\SystemSetting::get('allow_registration', true), FILTER_VALIDATE_BOOLEAN);
+        if (! $allowRegistration) {
+            return response()->json([
+                'success' => false,
+                'message' => 'New user registrations are currently closed by the system administrator.',
+            ], 403);
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'user',
+            'is_admin' => false,
             'settings' => [
                 'theme' => 'light',
                 'auto_save' => true,

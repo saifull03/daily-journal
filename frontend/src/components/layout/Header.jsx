@@ -1,25 +1,32 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Flame, PenSquare, Sun, Moon } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import { Flame, PenSquare, Sun, Moon, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { journalApi } from '../../api/journalApi';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Header({ onOpenTemplateSelector }) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuthStore();
+
+  const isAdmin = Boolean(user?.is_admin || user?.role === 'admin');
+  const isInAdmin = location.pathname.startsWith('/admin');
 
   // Fetch streak info for header badge
   const { data: statsData } = useQuery({
     queryKey: ['journal-statistics'],
     queryFn: () => journalApi.getStatistics(),
     staleTime: 1000 * 60 * 5, // 5 min
+    enabled: !isInAdmin,
   });
 
   const streak = statsData?.data?.current_streak || 0;
 
   // Derive title from pathname
   const getPageTitle = (path) => {
+    if (path.startsWith('/admin')) return 'Admin Portal';
     if (path.startsWith('/dashboard')) return 'Dashboard';
     if (path.startsWith('/journals/new')) return 'Write Journal';
     if (path.includes('/edit')) return 'Edit Journal';
@@ -37,14 +44,30 @@ export default function Header({ onOpenTemplateSelector }) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 py-3.5 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80">
       <div className="flex items-center gap-3">
-        <h2 className="text-base font-bold text-stone-900 dark:text-stone-100">
+        <h2 className="text-base font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
           {getPageTitle(location.pathname)}
+          {isInAdmin && (
+            <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-bold">
+              Super Admin
+            </span>
+          )}
         </h2>
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Writing Streak Badge */}
-        {streak > 0 && (
+        {/* Admin Shortcut badge in Header */}
+        {isAdmin && !isInAdmin && (
+          <Link
+            to="/admin"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-semibold hover:bg-purple-100 transition-colors"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Admin Portal</span>
+          </Link>
+        )}
+
+        {/* Writing Streak Badge (when in regular journal view) */}
+        {!isInAdmin && streak > 0 && (
           <div
             className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 text-xs font-semibold shadow-2xs"
             title={`${streak} Day Writing Streak`}
@@ -58,7 +81,7 @@ export default function Header({ onOpenTemplateSelector }) {
         <button
           type="button"
           onClick={toggleTheme}
-          className="md:hidden p-2 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+          className="md:hidden p-2 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
           title="Toggle theme"
         >
           {theme === 'dark' ? (
@@ -83,4 +106,3 @@ export default function Header({ onOpenTemplateSelector }) {
     </header>
   );
 }
-

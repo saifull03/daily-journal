@@ -6,14 +6,19 @@ import {
   PenSquare,
   Calendar,
   Settings,
+  Shield,
 } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
 
 export default function MobileNav({ onOpenTemplateSelector }) {
+  const { user } = useAuthStore();
+  const isAdmin = Boolean(user?.is_admin || user?.role === 'admin');
+
   const items = [
     { label: 'Home', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Journals', to: '/journals', icon: BookOpen },
     { label: 'Calendar', to: '/calendar', icon: Calendar },
-    { label: 'Settings', to: '/settings', icon: Settings },
+    ...(isAdmin ? [{ label: 'Admin', to: '/admin', icon: Shield }] : [{ label: 'Settings', to: '/settings', icon: Settings }]),
   ];
 
   return (
@@ -70,4 +75,3 @@ export default function MobileNav({ onOpenTemplateSelector }) {
     </nav>
   );
 }
-

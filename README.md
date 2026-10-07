@@ -300,24 +300,38 @@ npm run dev
 
 ---
 
-## Demo Credentials
+## Demo & Admin Credentials
 
-The database seeder automatically initializes a rich demo account with 23 realistic journal entries across all 10 templates, tags, photos, moods, and active writing streaks:
+The database seeder initializes both a **Super Admin** account with full brand customization & system control and a rich **Demo Journalist** account with 23 realistic journal entries:
 
+### 🛡️ Super Administrator Account
+- **Email**: `admin@example.com`
+- **Password**: `admin123`
+- **Role**: `admin` (`is_admin: true`)
+- **Capabilities**:
+  - **Brand Logo Customization**: Upload and manage custom brand logos with live preview.
+  - **Brand Identity**: Customize application name, slogan/tagline, welcome headline, and footer notices.
+  - **Accent Theme Palette**: Customize primary brand accent colors.
+  - **User Management**: View all users, create new users/admins, change roles, edit profiles, and delete accounts.
+  - **Platform Content Moderation**: Inspect and moderate journal entries platform-wide.
+  - **Registration Control**: Toggle allowing or closing new public user signups.
+
+### ✍️ Demo Journalist Account
 - **Email**: `demo@example.com`
 - **Password**: `password123`
+- **Role**: `user`
 
-*(On the login screen, you can also click the **"Auto Fill"** button to instantly populate these credentials).*
+*(On the login screen at [http://localhost:5173/login](http://localhost:5173/login), you can click either the **"Admin"** or **"Journalist"** auto-fill button to immediately log in with one click).*
 
 ---
 
 ## Running Feature Tests
 
-The backend includes a comprehensive PHPUnit/Pest feature test suite verifying authentication, policy authorization, journal CRUD, drafts autosaving, favorite toggling, and streak calculations:
+The backend includes a comprehensive PHPUnit feature test suite verifying authentication, admin policies, brand settings, journal CRUD, drafts autosaving, favorite toggling, and streak calculations:
 
 ```bash
 cd backend
-php artisan test --filter=JournalApiTest
+php artisan test
 ```
 
 ---
@@ -325,7 +339,8 @@ php artisan test --filter=JournalApiTest
 ## Security & Authorization
 
 - **Sanctum Authentication**: Only authenticated requests bearing a valid token in the `Authorization: Bearer <token>` header can access journal resources.
-- **Ownership Verification**: Policies (`JournalEntryPolicy` and `JournalTagPolicy`) ensure a user can NEVER access, update, or delete another user's journal or tags.
+- **Admin Guard Middleware**: Routes under `/api/admin/*` strictly require `is_admin: true` / `role: 'admin'`.
+- **Ownership Verification**: Policies (`JournalEntryPolicy` and `JournalTagPolicy`) ensure regular users can NEVER access, update, or delete another user's journal or tags.
 - **Never Trust Frontend User ID**: The authenticated user ID is strictly determined server-side from `auth()->id()`.
-- **File Validation**: Image uploads are validated for valid mime types (`jpeg, png, jpg, webp, gif`) and maximum file size (5MB).
+- **File Validation**: Image and brand logo uploads are validated for valid mime types (`jpeg, png, jpg, webp, svg, gif`) and maximum file size (4–5MB).
 

@@ -18,6 +18,8 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'role' => $this->role ?? ($this->is_admin ? 'admin' : 'user'),
+            'is_admin' => (bool) $this->isAdmin(),
             'avatar' => $this->avatar ? (str_starts_with($this->avatar, 'http') ? $this->avatar : asset('storage/' . $this->avatar)) : null,
             'bio' => $this->bio,
             'settings' => $this->settings ?? [
@@ -29,4 +31,3 @@ class UserResource extends JsonResource
         ];
     }
 }
-
